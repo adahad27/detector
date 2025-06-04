@@ -11,11 +11,13 @@ class DetectionDataset(Dataset):
     annotations_file contains the feature-label mapping file
     img_dir contains the directory that is used for storing all the images 
     """
-    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
+    def __init__(self, annotations_file, img_dir, partition, transform=None, target_transform=None):
         self.img_labels = pd.read_csv(annotations_file)
         self.img_dir = img_dir
         self.transform = transform
+        self.partition = partition
         self.target_transform = target_transform
+        self.img_labels = self.img_labels[(self.img_labels.partition == self.partition)]
 
     def __len__(self):
         return len(self.img_labels)
