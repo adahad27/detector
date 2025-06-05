@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from model import Conv_Net
 from sklearn import metrics
-from torch.nn.functional import softmax
+from dataset import return_all_datasets
 
 
 
@@ -47,7 +47,7 @@ def predict_class(logits):
     """
     return np.argmax(logits, axis = 1)
 
-def eval_epoch(model, training_loader, validation_loader, testing_loader, criterion, epoch,includes_testing = False):
+def eval_epoch(model, training_loader, validation_loader, testing_loader, criterion, epoch,stats, includes_testing = False):
 
     def get_stats(loader):
         y_true, y_pred = [], []
@@ -81,9 +81,13 @@ def eval_epoch(model, training_loader, validation_loader, testing_loader, criter
     val_accuracy, val_precision, val_f1score, val_recall, val_loss = get_stats(validation_loader)
     validation_results = Result("validation", epoch, val_accuracy, val_precision, val_f1score, val_recall, val_loss)
 
+    stats.append(training_results)
+    stats.append(validation_results)
+
     if(includes_testing):
         test_accuracy, test_precision, test_f1score, test_recall, test_loss = get_stats(testing_loader)
-        testing_results = Result("testing", epoch, test_accuracy, test_precision, test_f1score, test_recall, test_loss)   
+        testing_results = Result("testing", epoch, test_accuracy, test_precision, test_f1score, test_recall, test_loss)
+        stats.append(testing_results) 
 
     return
 
@@ -100,3 +104,40 @@ def main():
     """
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters, lr= learning_rate)
+
+    patience = 5
+    current_patience = 0
+
+    batch_size = 64
+
+    epoch = 0
+
+    training_loader, validation_loader, testing_loader = return_all_datasets(batch_size=batch_size)
+
+    global_min_loss = float("inf")
+
+    while(current_patience < patience):
+
+        stats = []
+
+        #Train an epoch
+        train_epoch(training_loader, model, criterion=criterion, optimizer=optimizer)
+
+        
+        #Evaluate an epoch
+        eval_epoch(model,
+                    training_loader=training_loader, 
+                    validation_loader=validation_loader, 
+                    testing_loader=testing_loader, 
+                    criterion=criterion, 
+                    epoch=epoch, 
+                    stats=stats)
+
+        curr_validation_loss = stats[-1].loss
+        if(curr_validation_loss < global_min_loss):
+            global_min_loss = curr_validation_loss
+            current_patience = 0
+        else:
+            current_patience += 1
+
+        epoch += 1
