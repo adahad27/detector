@@ -42,5 +42,5 @@ class Conv_Net(nn.Module):
         conv_block_2 = self.pool(F.relu(self.conv2(conv_block_1)))
         conv_block_3 = F.relu(self.conv3(conv_block_2))
         flattened_x = torch.flatten(conv_block_3, 1)
-        results = self.fc1(flattened_x)
+        results = self.fc_1(flattened_x)
         return results

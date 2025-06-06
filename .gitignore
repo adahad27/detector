@@ -176,3 +176,4 @@ cython_debug/
 #Training Data:
 train_data/
 train.csv
+model_parameters

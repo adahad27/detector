@@ -17,6 +17,15 @@ class Result:
         self.recall = recall
         self.loss = loss
 
+    def print_stats(self):
+        print(f"Epoch: {self.epoch} ({self.mode} data)")
+        print(f"Accuracy: {self.accuracy}")
+        print(f"Precision: {self.precision}")
+        print(f"F1 Score: {self.f1score}")
+        print(f"Recall: {self.recall}")
+        print(f"Loss: {self.loss}")
+
+
 
 
 def train_epoch(data_loader, model, criterion, optimizer):
@@ -38,7 +47,6 @@ def train_epoch(data_loader, model, criterion, optimizer):
 
         optimizer.step() # Gradient descent
 
-
 def predict_class(logits):
     """
     Assume that we are given the following logits [-1, -2], [1, 3], [-1, 2],
@@ -59,11 +67,23 @@ def eval_epoch(model, training_loader, validation_loader, testing_loader, criter
             running functions that normall run with requires_grad = True
             """
             with torch.no_grad():
-                y_true.append(y)
+
+                
+
+                
 
                 output = model(X)
-                y_pred.append(predict_class(output.data))
 
+                if(len(y_true) == 0):
+                    y_true = y
+                else:
+                    # We concatenate with y_true
+                    y_true = torch.cat((y_true, y))
+                if(len(y_pred) == 0):
+                    y_pred = predict_class(output.data)
+                else:
+                    # We concatenate with  y_pred
+                    y_pred = torch.cat((y_pred, predict_class(output.data)))
                 running_loss.append(criterion(output, y).item())
 
         accuracy = metrics.accuracy_score(y_true=y_true, y_pred=y_pred)
@@ -103,12 +123,12 @@ def main():
     a bad guess is way higher than with something like squared residuals.
     """
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters, lr= learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr= learning_rate)
 
     patience = 5
     current_patience = 0
 
-    batch_size = 64
+    batch_size = 1000
 
     epoch = 0
 
@@ -121,10 +141,12 @@ def main():
         stats = []
 
         #Train an epoch
+        print(f"Training on epoch {epoch}...")
         train_epoch(training_loader, model, criterion=criterion, optimizer=optimizer)
-
+        print("Finished training")
         
         #Evaluate an epoch
+        print(f"Evaluating model...")
         eval_epoch(model,
                     training_loader=training_loader, 
                     validation_loader=validation_loader, 
@@ -132,7 +154,9 @@ def main():
                     criterion=criterion, 
                     epoch=epoch, 
                     stats=stats)
-
+        print("Finished evaluation")
+        print()
+        #Update patience if min loss is not decreasing
         curr_validation_loss = stats[-1].loss
         if(curr_validation_loss < global_min_loss):
             global_min_loss = curr_validation_loss
@@ -140,4 +164,15 @@ def main():
         else:
             current_patience += 1
 
+        stats[-2].print_stats() #This will print training metrics for this epoch
+        print()
+        stats[-1].print_stats() #This will print validation metrics for this epoch
+
         epoch += 1
+        
+        print("Saving model now...")
+        torch.save(model.state_dict(), "model_parameters")
+        print("Saving finished")
+        print()
+
+main()

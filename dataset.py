@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import os
 from torch.utils.data import Dataset, DataLoader
+from torch import cat
 from PIL import Image
 from torchvision.io import decode_image
-
+from torchvision.transforms import v2
 
 class DetectionDataset(Dataset):
     """ 
@@ -24,9 +25,13 @@ class DetectionDataset(Dataset):
         return len(self.img_labels)
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
+        img_path = self.img_labels.iloc[idx, 1]
+        
         image = decode_image(img_path)
-        label = self.img_labels.iloc[idx, 1]
+        image = image.float()
+        label = self.img_labels.iloc[idx, 2]
+        if(image.size(dim=0) == 1):
+            image = cat((image, image, image), dim = 0)
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
@@ -35,9 +40,15 @@ class DetectionDataset(Dataset):
     
 
 def return_all_datasets(batch_size):
-    training_loader = DataLoader("modified_train.csv", "train_data/", "training", batch_size=batch_size, shuffle=True)
-    validation_loader = DataLoader("modified_train.csv", "train_data/", "validation", batch_size=batch_size, shuffle=False)
-    testing_loader = DataLoader("modified_train.csv", "train_data/", "testing", batch_size=batch_size, shuffle=False)
+    training_dataset = DetectionDataset("modified_train.csv", "train_data/", "training")
+    training_loader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
+
+    validation_dataset = DetectionDataset("modified_train.csv", "train_data/", "validation")
+    validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
+    
+    testing_dataset = DetectionDataset("modified_train.csv", "train_data/", "testing")
+    testing_loader = DataLoader(testing_dataset, batch_size=batch_size, shuffle=True)
+    
     return training_loader, validation_loader, testing_loader 
 
 class ImageStandardizer():
@@ -70,4 +81,3 @@ def resize(img_dir):
             img = Image.open(f"{img_dir}/{file}")
             img = img.resize((64, 64))
             img.save(f"{img_dir}/{file}")
-
