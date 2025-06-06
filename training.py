@@ -27,7 +27,7 @@ class Result:
 
 
 def load_model(model, path):
-    model = torch.load(path, weights_only=True)
+    model.load_state_dict(torch.load(path, weights_only=True))
 
 def train_epoch(data_loader, model, criterion, optimizer):
     for i, (X, y) in enumerate(data_loader):
@@ -177,8 +177,10 @@ def main():
         epoch += 1
         
         print("Saving model now...")
-        torch.save(model.state_dict(), paramter_save_path)
+        torch.save(model.state_dict(), paramter_save_path+".pt")
         print("Saving finished")
         print()
+
+    print("Training has finished!")
 
 main()
