@@ -21,32 +21,37 @@ class DetectionDataset(Dataset):
         self.target_transform = target_transform
         self.img_labels = self.img_labels[(self.img_labels.partition == self.partition)]
 
+        self.X, self.y = [], []
+
+        for i, path in enumerate(self.img_labels.iloc[:, 1]):
+            image = decode_image(path)
+            image = image.float()
+            if(image.size(dim = 0) == 1):
+                image = cat((image, image, image), dim = 0)
+            self.X.append(image)
+            self.y.append(self.img_labels.iloc[i, 2])
+
     def __len__(self):
         return len(self.img_labels)
 
     def __getitem__(self, idx):
-        img_path = self.img_labels.iloc[idx, 1]
-        
-        image = decode_image(img_path)
-        image = image.float()
-        label = self.img_labels.iloc[idx, 2]
-        if(image.size(dim=0) == 1):
-            image = cat((image, image, image), dim = 0)
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        return image, label
+        return self.X[idx], self.y[idx]
     
 
 def return_all_datasets(batch_size):
     training_dataset = DetectionDataset("modified_train.csv", "train_data/", "training")
-    training_loader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
-
     validation_dataset = DetectionDataset("modified_train.csv", "train_data/", "validation")
-    validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
-    
     testing_dataset = DetectionDataset("modified_train.csv", "train_data/", "testing")
+
+    # standardizer = ImageStandardizer()
+    # standardizer.fit(validation_dataset.X)
+
+    # training_dataset.X = standardizer.transform(training_dataset.X)
+    # validation_dataset.X = standardizer.transform(validation_dataset.X)
+    # testing_dataset.X = standardizer.transform(testing_dataset.X)
+
+    training_loader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)    
+    validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)    
     testing_loader = DataLoader(testing_dataset, batch_size=batch_size, shuffle=True)
     
     return training_loader, validation_loader, testing_loader 

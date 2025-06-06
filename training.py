@@ -3,7 +3,7 @@ import numpy as np
 from model import Conv_Net
 from sklearn import metrics
 from dataset import return_all_datasets
-
+import os
 
 
 class Result:
@@ -26,7 +26,8 @@ class Result:
         print(f"Loss: {self.loss}")
 
 
-
+def load_model(model, path):
+    model = torch.load(path, weights_only=True)
 
 def train_epoch(data_loader, model, criterion, optimizer):
     for i, (X, y) in enumerate(data_loader):
@@ -132,6 +133,11 @@ def main():
 
     epoch = 0
 
+    paramter_save_path = "model_parameters"
+
+    if(os.path.isfile(paramter_save_path)):
+        load_model(model, paramter_save_path)
+
     training_loader, validation_loader, testing_loader = return_all_datasets(batch_size=batch_size)
 
     global_min_loss = float("inf")
@@ -139,7 +145,7 @@ def main():
     while(current_patience < patience):
 
         stats = []
-
+        
         #Train an epoch
         print(f"Training on epoch {epoch}...")
         train_epoch(training_loader, model, criterion=criterion, optimizer=optimizer)
@@ -171,7 +177,7 @@ def main():
         epoch += 1
         
         print("Saving model now...")
-        torch.save(model.state_dict(), "model_parameters")
+        torch.save(model.state_dict(), paramter_save_path)
         print("Saving finished")
         print()
 
