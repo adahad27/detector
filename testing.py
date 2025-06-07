@@ -28,10 +28,9 @@ def test_image(img_path):
         image = cat((image, image, image), dim = 0)
     with torch.no_grad():
         output = model(image)
-        print(softmax(output))
+        probabilites = softmax(output)
         output = predict_class(output)
-        print(output)
-    return output[0]
+    return output[0].item(), probabilites[0][output[0].item()].item()
 
 
 
@@ -76,5 +75,7 @@ def main():
     print("Training has finished!")
 
 if __name__ == "__main__":
-    print(test_image("AI_Image.jpg"))
+    path = input("Please entire the path to the file you want to test:")
+    prediction, probability = test_image(path)
+    print(f"We predict a class of {prediction} with probability {probability}")
     # main()
