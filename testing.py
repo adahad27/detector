@@ -76,6 +76,9 @@ def main():
 
 if __name__ == "__main__":
     path = input("Please entire the path to the file you want to test:")
+    while(not os.path.isfile(path)):
+        path = input("Sorry this file doesn't exist, please try again")
+    
     prediction, probability = test_image(path)
     print(f"We predict a class of {prediction} with probability {probability}")
     # main()
