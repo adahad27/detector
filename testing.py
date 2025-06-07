@@ -72,7 +72,7 @@ def main():
                stats = stats, 
                includes_testing=True)
     stats[-1].print_stats()
-    print("Training has finished!")
+    print("Testing has finished!")
 
 if __name__ == "__main__":
     path = input("Please entire the path to the file you want to test:")
