@@ -183,4 +183,5 @@ def main():
 
     print("Training has finished!")
 
-# main()
+if __name__ == "__main__":
+    main()
